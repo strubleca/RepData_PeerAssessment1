@@ -52,44 +52,69 @@ str(activitydata)
 ##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
 ```
 
-The date column will be more convenient as `Date` objects rather than as
-strings. Two additional columns are also created. The `minutes` column
-is a transformation of the `interval` values 
-into the number of minutes into the day.
-The `datetime` column creates a combined date and time column
-for plotting time series data later. The `GMT` timezone is used
-to keep proper values regardless of the local timezone
-of code execution.
+The `date` column will be more convenient as `Date` objects rather than as
+strings. So it is converted.
 
 
 ```r
 activitydata <- transform(activitydata, date=as.Date(date, format="%Y-%m-%d"))
-activitydata <- transform(activitydata, minutes=interval%/%100 * 60 + interval %% 60)
-activitydata <- transform(activitydata, datetime=as.POSIXct(minutes * 60, origin=date, tz="GMT"))
-activitydata <- transform(activitydata, intervalf=as.factor(interval))
+```
+
+The `interval` column is an integer in `HHMM` format, with leading
+zeroes removed, spaced every 5 minutes. This means that a plot using the
+interval column will be unevenly spaced, as you jump from 1055 to 1100,
+for example.
+
+A new `intervalf` column is created by converting the time
+intervals into a factor. The conversion makes the intervals appear
+equidistantly on later plots. Zero pad the interval to a width of 4
+for pretty tick labels later.
+
+
+```r
+activitydata <- transform(activitydata, intervalf=as.factor(sprintf("%04d", interval)))
+```
+
+The transformations are reviewed to make sure they happened
+properly.
+
+
+```r
 str(activitydata)
 ```
 
 ```
-## 'data.frame':	17568 obs. of  6 variables:
+## 'data.frame':	17568 obs. of  4 variables:
 ##  $ steps    : int  NA NA NA NA NA NA NA NA NA NA ...
 ##  $ date     : Date, format: "2012-10-01" "2012-10-01" ...
 ##  $ interval : int  0 5 10 15 20 25 30 35 40 45 ...
-##  $ minutes  : num  0 5 10 15 20 25 30 35 40 45 ...
-##  $ datetime : POSIXct, format: "2012-10-01 00:00:00" "2012-10-01 00:05:00" ...
-##  $ intervalf: Factor w/ 288 levels "0","5","10","15",..: 1 2 3 4 5 6 7 8 9 10 ...
+##  $ intervalf: Factor w/ 288 levels "0000","0005",..: 1 2 3 4 5 6 7 8 9 10 ...
 ```
 
 ## What is mean total number of steps taken per day?
 
+### Instructions
+
+> For this part of the assignment, you can ignore the missing values in
+> the dataset.
+>
+> 1. Make a histogram of the total number of steps taken each day
+>
+> 2. Calculate and report the **mean** and **median** total number of steps 
+>    taken per day
+
+### Results
 Per the instructions, a histogram of the total
 number of steps per day is plotted. 
 The data are aggregated by date using the
-`sum` function, ignoring missing values.
+`sum` function, ignoring missing values with `na.rm=TRUE`.
+For `aggregate` the `na.action` parameter is set to allow NA values
+to pass through to the sums. Otherwise, days with partial data are omitted.
+In effect, this treats missing data as zeroes.
 
 
 ```r
-totalsteps <- aggregate(steps ~ date, activitydata, sum, na.rm=T)
+totalsteps <- aggregate(steps ~ date, activitydata, sum, na.rm=TRUE, na.action=na.pass)
 qplot(steps, data=totalsteps, geom="histogram", binwidth=4000,
       xlab="Total Steps",
       ylab="# of Days",
@@ -100,7 +125,7 @@ qplot(steps, data=totalsteps, geom="histogram", binwidth=4000,
 
 The instructions for the second part of this section
 ask for the mean and median total number of steps per day.
-Again, missing values are ignored.
+Again, missing values are ignored using `na.rm=TRUE`.
 
 
 ```r
@@ -111,22 +136,36 @@ writeLines(c(paste("The mean total steps per day is", meantotal),
 ```
 
 ```
-## The mean total steps per day is 10766.1886792453
-## The median total steps per day is 10765
+## The mean total steps per day is 9354.22950819672
+## The median total steps per day is 10395
 ```
 
 ## What is the average daily activity pattern?
 
+### Instructions
+
+> 1. Make a time series plot (i.e. `type = "l"`) of the 5-minute interval 
+> (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+>
+> 2. Which 5-minute interval, on average across all the days in the dataset, 
+> contains the maximum number of steps?
+
+### Results
 The daily activity pattern is calculated by computing the mean number
 of steps during each time interval across all days. Missing values are
-ignored. The factor version of the interval is used to treat intervals
-as equal width.
+ignored by `sum` with `na.rm=TRUE`. Intervals with partial data are maintained
+with `na.action=na.pass`. The factor version of the interval is used to treat 
+intervals as equal width.
 
 
 ```r
-dailysteps <- aggregate(steps ~ intervalf, activitydata, mean, na.rm=TRUE)
+dailysteps <- aggregate(steps ~ intervalf, activitydata, mean, 
+                        na.rm=TRUE, na.action=na.pass)
+ticklabels <- ifelse(as.numeric(dailysteps$intervalf) %% 12 == 1, 
+                     as.character(dailysteps$intervalf), "")
 g <- ggplot(dailysteps, aes(x=intervalf, y=steps)) + geom_line(aes(group=1))
-g + theme(axis.text.x=element_blank()) + 
+g + scale_x_discrete(labels=ticklabels) + 
+    theme(axis.text.x=element_text(angle=90)) +
     labs(title="Average Daily Activity Pattern",
          x="Time Interval (Every 5 Minutes)",
          y="Daily Average Steps")
@@ -144,17 +183,37 @@ writeLines(paste("The interval with the maximum daily average steps is", maxinte
 ```
 
 ```
-## The interval with the maximum daily average steps is 835
+## The interval with the maximum daily average steps is 0835
 ```
 
 
 ## Imputing missing values
 
-The number of rows with missing values is computed as follows.
+### Instructions
+
+> 1. Calculate and report the total number of missing values in the dataset 
+> (i.e. the total number of rows with `NA`s)
+>
+> 2. Devise a strategy for filling in all of the missing values in the dataset. 
+> The strategy does not need to be sophisticated. For example, you could use
+> the mean/median for that day, or the mean for that 5-minute interval, etc.
+>
+> 3. Create a new dataset that is equal to the original dataset but with the
+> missing data filled in.
+>
+> 4. Make a histogram of the total number of steps taken each day and Calculate
+> and report the **mean** and **median** total number of steps taken per day. 
+> Do these values differ from the estimates from the first part of the 
+> assignment? What is the impact of imputing missing data on the estimates of
+> the total daily number of steps?
+
+### Results
+The number of rows with missing values is computed by checking if any
+value within a row is `NA` using a combination of `apply` and `any`.
 
 
 ```r
-missingrows <- which(apply(activitydata,1,function(x) any(is.na(x))))
+missingrows <- which(apply(activitydata, 1, function(x) any(is.na(x))))
 writeLines(paste("There are", length(missingrows), "missing rows."))
 ```
 
@@ -168,7 +227,7 @@ as the following code shows.
 
 ```r
 with(activitydata, {
-    writeLines(paste("steps is missing",length(which(is.na(steps))), "values"))
+    writeLines(paste("steps is missing", length(which(is.na(steps))), "values"))
     writeLines(paste("interval is missing", length(which(is.na(interval))), "values"))
     writeLines(paste("date is missing", length(which(is.na(date))), "values"))
     })
@@ -181,13 +240,17 @@ with(activitydata, {
 ```
 
 Missing data is replaced with the average for the same time interval.
-Make sure to verify that there are no missing values in the imputeddata.
+The `imputeddata` variable is used to store the imputed results.
+Averages are obtained from the `dailysteps` variable computed above,
+which contains the average steps measured daily for each time interval.
+After the missing data is imputed, a check verifies there are no longer
+any missing values.
 
 
 ```r
 imputeddata  <- activitydata
 matchingavgs <- match(activitydata$intervalf[missingrows],
-                       dailysteps$intervalf)
+                      dailysteps$intervalf)
 imputeddata$steps[missingrows] <- dailysteps$steps[matchingavgs]
 any(is.na(imputeddata))
 ```
@@ -196,12 +259,11 @@ any(is.na(imputeddata))
 ## [1] FALSE
 ```
 
-A report similar to the initial report is generated. First, a new histogram
-with the imputed data.
+A histogram with the imputed data is plotted.
 
 
 ```r
-imputedsteps <- aggregate(steps ~ date, imputeddata, sum, na.rm=T)
+imputedsteps <- aggregate(steps ~ date, imputeddata, sum, na.rm=TRUE, na.action=na.pass)
 qplot(steps, data=imputedsteps, geom="histogram", binwidth=4000,
       xlab="Total Steps",
       ylab="# of Days",
@@ -210,8 +272,24 @@ qplot(steps, data=imputedsteps, geom="histogram", binwidth=4000,
 
 ![plot of chunk imputedaggregate](./PA1_template_files/figure-html/imputedaggregate.png) 
 
-The histogram shows more days with daily totals around 10,000 steps,
-but not many other changes. TODO: Compute the difference in the histograms.
+To see the differences between the original and imputed data, the
+two data sets are merged and then the histograms plotted together.
+
+
+```r
+combinedsteps <- c(totalsteps$steps,imputedsteps$steps)
+combinedsource <- c( rep("Original",nrow(totalsteps)),
+                     rep("Imputed", nrow(imputedsteps)) )
+combineddf <- data.frame(steps=combinedsteps,
+                         source=as.factor(combinedsource))
+cmpg <- ggplot(combineddf, aes(x=steps, fill=source))
+cmpg + geom_histogram(binwidth=4000, alpha=.5, position="identity") +
+    labs(title="Comparison of Histograms for Original and Imputed Data",
+         x="Total Steps", y="# of Days")
+```
+
+![plot of chunk comparehistograms](./PA1_template_files/figure-html/comparehistograms.png) 
+
 
 The mean and median of the imputed data set now follows.
 
@@ -228,18 +306,44 @@ writeLines(c(paste("The mean total steps (imputed) per day is", meanimputed),
 ## The median total steps (imputed) per day is 10766.1886792453
 ```
 
-The mean has not changed from the original data set, but the median has
-changed slightly and now matches the mean.
+The median and mean of the imputed data are now identical.
+
+The differences in the original and imputed means and medians are
+
+
+```r
+writeLines(c(paste("The difference in means is: ", meantotal - meanimputed),
+             paste("The difference in medians is: ", mediantotal - medianimputed)))
+```
+
+```
+## The difference in means is:  -1411.95917104856
+## The difference in medians is:  -371.188679245282
+```
+
+The data in the imputed data set has more steps per day on average,
+which is expected since imputing missing values increases the total
+steps for days containing missing data.
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
+### Instructions
+
+> 1. Create a new factor variable in the dataset with two levels -- "weekday"
+> and "weekend" indicating whether a given date is a weekday or weekend day.
+>
+> 1. Make a panel plot containing a time series plot (i.e. `type = "l"`) of the
+> 5-minute interval (x-axis) and the average number of steps taken, averaged
+> across all weekday days or weekend days (y-axis).
+
+### Results
 Add a factor variable indicating whether or not the day is a weekday
 or weekend.
 
 
 ```r
 weekday <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
-isweekday <- with(activitydata,weekdays(date) %in% weekday)
+isweekday <- with(activitydata, weekdays(date) %in% weekday)
 activitydata$daytype <- factor(isweekday, labels=c("weekend", "weekday"))
 with(activitydata, table(daytype))
 ```
@@ -255,9 +359,12 @@ The original data set is used, and missing values are ignored.
 
 
 ```r
-daytypesteps <- aggregate(steps ~ intervalf + daytype, activitydata, mean, na.rm=TRUE)
+daytypesteps <- aggregate(steps ~ intervalf + daytype, activitydata, mean, 
+                          na.rm=TRUE, na.action=na.pass)
 dtg <- ggplot(daytypesteps, aes(x=intervalf, y=steps)) + geom_line(aes(group=1))
-dtg + facet_grid(daytype ~ .) + theme(axis.text.x=element_blank()) + 
+dtg + facet_grid(daytype ~ .) + 
+    scale_x_discrete(labels=ticklabels) +
+    theme(axis.text.x=element_text(angle=90)) +
     labs(title="Average Daily Activity Pattern\n(Weekday vs. Weekend)",
          x="Time Interval (Every 5 Minutes)",
          y="Daily Average Steps")
