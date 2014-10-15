@@ -1,4 +1,9 @@
-# Reproducible Research: Peer Assessment 1
+---
+title: "Reproducible Research: Peer Assessment 1"
+output: 
+  html_document:
+    keep_md: true
+---
 
 ## Script Setup
 
@@ -121,7 +126,7 @@ qplot(steps, data=totalsteps, geom="histogram", binwidth=4000,
       main="Histogram of Total Steps per Day")
 ```
 
-![plot of chunk totalaggregate](./PA1_template_files/figure-html/totalaggregate.png) 
+![plot of chunk totalaggregate](figure/totalaggregate.png) 
 
 The instructions for the second part of this section
 ask for the mean and median total number of steps per day.
@@ -171,7 +176,7 @@ g + scale_x_discrete(labels=ticklabels) +
          y="Daily Average Steps")
 ```
 
-![plot of chunk dailyaggregate](./PA1_template_files/figure-html/dailyaggregate.png) 
+![plot of chunk dailyaggregate](figure/dailyaggregate.png) 
 
 The interval with the maximum number of steps on average is computed
 with the following code.
@@ -270,7 +275,7 @@ qplot(steps, data=imputedsteps, geom="histogram", binwidth=4000,
       main="Histogram of Total Steps per Day\n(Imputed Data)")
 ```
 
-![plot of chunk imputedaggregate](./PA1_template_files/figure-html/imputedaggregate.png) 
+![plot of chunk imputedaggregate](figure/imputedaggregate.png) 
 
 To see the differences between the original and imputed data, the
 two data sets are merged and then the histograms plotted together.
@@ -288,7 +293,7 @@ cmpg + geom_histogram(binwidth=4000, alpha=.5, position="identity") +
          x="Total Steps", y="# of Days")
 ```
 
-![plot of chunk comparehistograms](./PA1_template_files/figure-html/comparehistograms.png) 
+![plot of chunk comparehistograms](figure/comparehistograms.png) 
 
 
 The mean and median of the imputed data set now follows.
@@ -370,7 +375,7 @@ dtg + facet_grid(daytype ~ .) +
          y="Daily Average Steps")
 ```
 
-![plot of chunk aggregateweekdays](./PA1_template_files/figure-html/aggregateweekdays.png) 
+![plot of chunk aggregateweekdays](figure/aggregateweekdays.png) 
 
 On the weekend, activity is spread more evenly throughout the day. During
 the weekdays, activity starts earlier and peaks earlier than on the weekend.
