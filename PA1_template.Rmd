@@ -9,7 +9,7 @@ output:
 
 The ggplot2 library is used for plotting, so include it.
 
-```{r setup}
+```{r setup, echo=TRUE}
 library(ggplot2)
 ```
 
@@ -18,7 +18,7 @@ library(ggplot2)
 Loading the data unzips the available ZIP file if the CSV file does not
 already exist.
 
-```{r loading}
+```{r loading, echo=TRUE}
 # Variables for data file locations
 zipfile <- "activity.zip"
 datafile <- "activity.csv"
@@ -36,14 +36,14 @@ activitydata <- read.csv(datafile, stringsAsFactors=FALSE)
 
 Review the data structure of the read in data.
 
-```{r datareview}
+```{r datareview, echo=TRUE}
 str(activitydata)
 ```
 
 The `date` column will be more convenient as `Date` objects rather than as
 strings. So it is converted.
 
-```{r transformdate}
+```{r transformdate, echo=TRUE}
 activitydata <- transform(activitydata, date=as.Date(date, format="%Y-%m-%d"))
 ```
 
@@ -57,14 +57,14 @@ intervals into a factor. The conversion makes the intervals appear
 equidistantly on later plots. Zero pad the interval to a width of 4
 for pretty tick labels later.
 
-```{r transforminterval}
+```{r transforminterval, echo=TRUE}
 activitydata <- transform(activitydata, intervalf=as.factor(sprintf("%04d", interval)))
 ```
 
 The transformations are reviewed to make sure they happened
 properly.
 
-```{r reviewtransformations}
+```{r reviewtransformations, echo=TRUE}
 str(activitydata)
 ```
 
@@ -89,7 +89,7 @@ For `aggregate` the `na.action` parameter is set to allow NA values
 to pass through to the sums. Otherwise, days with partial data are omitted.
 In effect, this treats missing data as zeroes.
 
-```{r totalaggregate, fig.height=4, fig.width=4}
+```{r totalaggregate, fig.height=4, fig.width=4, echo=TRUE}
 totalsteps <- aggregate(steps ~ date, activitydata, sum, na.rm=TRUE, na.action=na.pass)
 qplot(steps, data=totalsteps, geom="histogram", binwidth=4000,
       xlab="Total Steps",
@@ -101,7 +101,7 @@ The instructions for the second part of this section
 ask for the mean and median total number of steps per day.
 Again, missing values are ignored using `na.rm=TRUE`.
 
-```{r totalmeanmedian}
+```{r totalmeanmedian, echo=TRUE}
 meantotal <- with(totalsteps, mean(steps, na.rm=TRUE))
 mediantotal <- with(totalsteps, median(steps, na.rm=TRUE))
 writeLines(c(paste("The mean total steps per day is", meantotal),
@@ -125,7 +125,7 @@ ignored by `sum` with `na.rm=TRUE`. Intervals with partial data are maintained
 with `na.action=na.pass`. The factor version of the interval is used to treat 
 intervals as equal width.
 
-```{r dailyaggregate, fig.width=8, fig.height=4}
+```{r dailyaggregate, fig.width=8, fig.height=4, echo=TRUE}
 dailysteps <- aggregate(steps ~ intervalf, activitydata, mean, 
                         na.rm=TRUE, na.action=na.pass)
 ticklabels <- ifelse(as.numeric(dailysteps$intervalf) %% 12 == 1, 
@@ -141,7 +141,7 @@ g + scale_x_discrete(labels=ticklabels) +
 The interval with the maximum number of steps on average is computed
 with the following code.
 
-```{r dailymax}
+```{r dailymax, echo=TRUE}
 maxinterval <- with(dailysteps, intervalf[which.max(steps)])
 writeLines(paste("The interval with the maximum daily average steps is", maxinterval))
 ```
@@ -171,7 +171,7 @@ writeLines(paste("The interval with the maximum daily average steps is", maxinte
 The number of rows with missing values is computed by checking if any
 value within a row is `NA` using a combination of `apply` and `any`.
 
-```{r missingrows}
+```{r missingrows, echo=TRUE}
 missingrows <- which(apply(activitydata, 1, function(x) any(is.na(x))))
 writeLines(paste("There are", length(missingrows), "missing rows."))
 ```
@@ -179,7 +179,7 @@ writeLines(paste("There are", length(missingrows), "missing rows."))
 It turns out that only the `steps` column contains missing data
 as the following code shows.
 
-```{r missingdatacols}
+```{r missingdatacols, echo=TRUE}
 with(activitydata, {
     writeLines(paste("steps is missing", length(which(is.na(steps))), "values"))
     writeLines(paste("interval is missing", length(which(is.na(interval))), "values"))
@@ -194,7 +194,7 @@ which contains the average steps measured daily for each time interval.
 After the missing data is imputed, a check verifies there are no longer
 any missing values.
 
-```{r imputedata}
+```{r imputedata, echo=TRUE}
 imputeddata  <- activitydata
 matchingavgs <- match(activitydata$intervalf[missingrows],
                       dailysteps$intervalf)
@@ -204,7 +204,7 @@ any(is.na(imputeddata))
 
 A histogram with the imputed data is plotted.
 
-```{r imputedaggregate, fig.height=4, fig.width=4}
+```{r imputedaggregate, fig.height=4, fig.width=4, echo=TRUE}
 imputedsteps <- aggregate(steps ~ date, imputeddata, sum, na.rm=TRUE, na.action=na.pass)
 qplot(steps, data=imputedsteps, geom="histogram", binwidth=4000,
       xlab="Total Steps",
@@ -215,7 +215,7 @@ qplot(steps, data=imputedsteps, geom="histogram", binwidth=4000,
 To see the differences between the original and imputed data, the
 two data sets are merged and then the histograms plotted together.
 
-```{r comparehistograms}
+```{r comparehistograms, echo=TRUE}
 combinedsteps <- c(totalsteps$steps,imputedsteps$steps)
 combinedsource <- c( rep("Original",nrow(totalsteps)),
                      rep("Imputed", nrow(imputedsteps)) )
@@ -230,7 +230,7 @@ cmpg + geom_histogram(binwidth=4000, alpha=.5, position="identity") +
 
 The mean and median of the imputed data set now follows.
 
-```{r imputedmeanmedian}
+```{r imputedmeanmedian, echo=TRUE}
 meanimputed <- with(imputedsteps, mean(steps, na.rm=TRUE))
 medianimputed <- with(imputedsteps, median(steps, na.rm=TRUE))
 writeLines(c(paste("The mean total steps (imputed) per day is", meanimputed),
@@ -241,7 +241,7 @@ The median and mean of the imputed data are now identical.
 
 The differences in the original and imputed means and medians are
 
-```{r imputeddifferences}
+```{r imputeddifferences, echo=TRUE}
 writeLines(c(paste("The difference in means is: ", meantotal - meanimputed),
              paste("The difference in medians is: ", mediantotal - medianimputed)))
 ```
@@ -265,7 +265,7 @@ steps for days containing missing data.
 Add a factor variable indicating whether or not the day is a weekday
 or weekend.
 
-```{r labelweekdays}
+```{r labelweekdays, echo=TRUE}
 weekday <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
 isweekday <- with(activitydata, weekdays(date) %in% weekday)
 activitydata$daytype <- factor(isweekday, labels=c("weekend", "weekday"))
@@ -275,7 +275,7 @@ with(activitydata, table(daytype))
 Aggregate the data by interval and day type for comparing activity patterns.
 The original data set is used, and missing values are ignored.
 
-```{r aggregateweekdays, fig.width=8, fig.height=4}
+```{r aggregateweekdays, fig.width=8, fig.height=4, echo=TRUE}
 daytypesteps <- aggregate(steps ~ intervalf + daytype, activitydata, mean, 
                           na.rm=TRUE, na.action=na.pass)
 dtg <- ggplot(daytypesteps, aes(x=intervalf, y=steps)) + geom_line(aes(group=1))
