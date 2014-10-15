@@ -109,8 +109,8 @@ number of steps per day is plotted.
 The data are aggregated by date using the
 `sum` function, ignoring missing values with `na.rm=TRUE`.
 For `aggregate` the `na.action` parameter is set to allow NA values
-to pass through to the sums. Otherwise, days with partial data are omitted.
-In effect, this treats missing data as zeroes.
+to pass through to the sums. Otherwise, days with partial or no data 
+are omitted. In effect, this treats missing data as zeroes.
 
 
 ```r
@@ -155,7 +155,8 @@ The daily activity pattern is calculated by computing the mean number
 of steps during each time interval across all days. Missing values are
 ignored by `sum` with `na.rm=TRUE`. Intervals with partial data are maintained
 with `na.action=na.pass`. The factor version of the interval is used to treat 
-intervals as equal width.
+intervals as equal width. X-axis tick labels are generated for intervals on the
+hour and made blank for others for a cleaner plot.
 
 
 ```r

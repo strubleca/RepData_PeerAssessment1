@@ -289,8 +289,8 @@ number of steps per day is plotted.
 The data are aggregated by date using the
 <code>sum</code> function, ignoring missing values with <code>na.rm=TRUE</code>.
 For <code>aggregate</code> the <code>na.action</code> parameter is set to allow NA values
-to pass through to the sums. Otherwise, days with partial data are omitted.
-In effect, this treats missing data as zeroes.</p>
+to pass through to the sums. Otherwise, days with partial or no data 
+are omitted. In effect, this treats missing data as zeroes.</p>
 
 <pre><code class="r">totalsteps &lt;- aggregate(steps ~ date, activitydata, sum, na.rm=TRUE, na.action=na.pass)
 qplot(steps, data=totalsteps, geom=&quot;histogram&quot;, binwidth=4000,
@@ -334,7 +334,8 @@ contains the maximum number of steps?</p></li>
 of steps during each time interval across all days. Missing values are
 ignored by <code>sum</code> with <code>na.rm=TRUE</code>. Intervals with partial data are maintained
 with <code>na.action=na.pass</code>. The factor version of the interval is used to treat 
-intervals as equal width.</p>
+intervals as equal width. X-axis tick labels are generated for intervals on the
+hour and made blank for others for a cleaner plot.</p>
 
 <pre><code class="r">dailysteps &lt;- aggregate(steps ~ intervalf, activitydata, mean, 
                         na.rm=TRUE, na.action=na.pass)
